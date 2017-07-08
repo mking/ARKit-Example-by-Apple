@@ -38,6 +38,18 @@ class VirtualObject: SCNNode {
 	}
 	
 	func loadModel() {
+        if modelName == "tetrisShape" {
+            let box = SCNBox(width: 0.2, height: 0.2, length: 0.2, chamferRadius: 0)
+            box.firstMaterial?.diffuse.contents = UIColor.red
+            box.firstMaterial?.lightingModel = .physicallyBased
+            
+            let node = SCNNode(geometry: box)
+            self.addChildNode(node)
+            
+            modelLoaded = true
+            return
+        }
+        
 		guard let virtualObjectScene = SCNScene(named: "\(modelName).\(fileExtension)", inDirectory: "Models.scnassets/\(modelName)") else {
 			return
 		}
@@ -93,7 +105,8 @@ extension VirtualObject {
 		Cup(),
 		Vase(),
 		Lamp(),
-		Chair()
+		Chair(),
+        TetrisShape()
 	]
 }
 

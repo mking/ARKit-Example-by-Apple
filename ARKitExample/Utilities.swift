@@ -623,3 +623,8 @@ func createPlane(size: CGSize, contents: AnyObject?) -> SCNPlane {
 	plane.materials = [SCNMaterial.material(withDiffuse: contents)]
 	return plane
 }
+
+// generate random float [lowerBound, upperBound)
+func createRandom(lowerBound: Float, upperBound: Float) -> Float {
+    return ((Float(arc4random_uniform(100)) / Float(100)) * (upperBound - lowerBound)) + lowerBound
+}

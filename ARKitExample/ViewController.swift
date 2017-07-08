@@ -226,7 +226,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 		}
 		
 		if currentGesture == nil {
-			currentGesture = Gesture.startGestureFromTouches(touches, self.sceneView, object)
+//            currentGesture = Gesture.startGestureFromTouches(touches, self.sceneView, object)
 		} else {
 			currentGesture = currentGesture!.updateGestureFromTouches(touches, .touchBegan)
 		}
@@ -535,6 +535,17 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 				self.addObjectButton.setImage(buttonImage, for: [])
 				self.addObjectButton.setImage(pressedButtonImage, for: [.highlighted])
 				self.isLoadingObject = false
+                
+                // create tetris shapes at interval
+                Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { (timer) in
+                    let box = SCNBox(width: 0.1, height: 0.1, length: 0.1, chamferRadius: 0)
+                    box.firstMaterial?.diffuse.contents = UIColor.blue
+                    box.firstMaterial?.lightingModel = .physicallyBased
+                    
+                    let node = SCNNode(geometry: box)
+                    node.position = SCNVector3(x: object.position.x + createRandom(lowerBound: -1, upperBound: 1), y: object.position.y, z: object.position.z + createRandom(lowerBound: -1, upperBound: 1))
+                    self.sceneView.scene.rootNode.addChildNode(node)
+                }
 			}
 		}
     }
