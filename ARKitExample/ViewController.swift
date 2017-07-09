@@ -56,6 +56,10 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 	var use3DOFTrackingFallback = false
     @IBOutlet var sceneView: ARSCNView!
 	var screenCenter: CGPoint?
+    static let numTiles = 6
+    var slots: [[Int]] = {
+        return Array(repeating: Array(repeating: 0, count: numTiles), count: numTiles)
+    }()
     
     func setupScene() {
         // set up sceneView
@@ -226,6 +230,8 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 		}
 		
 		if currentGesture == nil {
+            // tap to trigger the next tetris shape.
+            dropTetrisShape()
 //            currentGesture = Gesture.startGestureFromTouches(touches, self.sceneView, object)
 		} else {
 			currentGesture = currentGesture!.updateGestureFromTouches(touches, .touchBegan)
@@ -233,6 +239,54 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 		
 		displayVirtualObjectTransform()
 	}
+    
+    func dropTetrisShape() {
+        guard let object = virtualObject else {
+            return
+        }
+        
+        let boardLength = CGFloat(0.5)
+        let boxLength = boardLength / CGFloat(ViewController.numTiles)
+        
+        let box = SCNBox(width: boxLength, height: boxLength, length: boxLength, chamferRadius: 0.1 * boxLength)
+        box.firstMaterial?.diffuse.contents = UIColor.blue
+        box.firstMaterial?.lightingModel = .physicallyBased
+        
+        let node = SCNNode(geometry: box)
+        
+        // create random [0, numTiles)
+        func createRandomTileIndex() -> Int {
+            return Int(floor(CGFloat(createRandom(lowerBound: 0, upperBound: 1)) * CGFloat(ViewController.numTiles)))
+        }
+        // create random [-boardLength / 2, boardLength / 2)
+        func createRandomBoardPosition(tileIndex: Int) -> CGFloat {
+            return ((CGFloat(tileIndex) / CGFloat(ViewController.numTiles)) * boardLength) - (boardLength / 2)
+        }
+        
+        let tileIndexX = createRandomTileIndex();
+        let tileIndexZ = createRandomTileIndex();
+        slots[tileIndexX][tileIndexZ] += 1
+        
+        let dropDistance = Float(1)
+        node.position = SCNVector3(x: object.position.x + Float(createRandomBoardPosition(tileIndex: tileIndexX)), y: object.position.y + dropDistance, z: object.position.z + Float(createRandomBoardPosition(tileIndex: tileIndexZ)))
+        node.opacity = 0
+        self.sceneView.scene.rootNode.addChildNode(node)
+        
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = 2.0
+        node.opacity = 0.5
+        SCNTransaction.commit()
+        
+        let dropDuration = Float(5.0)
+        let velocity = dropDistance / dropDuration
+        let targetPosition = Float(slots[tileIndexX][tileIndexZ]) * Float(boxLength)
+        let remainingDistance = dropDistance - targetPosition
+        SCNTransaction.begin()
+        SCNTransaction.animationDuration = CFTimeInterval(remainingDistance / velocity)
+        print("drop info \(remainingDistance) \(SCNTransaction.animationDuration) \(remainingDistance / Float(SCNTransaction.animationDuration)) \(velocity)")
+        node.position.y = object.position.y + targetPosition
+        SCNTransaction.commit()
+    }
 	
 	override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
 		if virtualObject == nil {
@@ -535,31 +589,6 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
 				self.addObjectButton.setImage(buttonImage, for: [])
 				self.addObjectButton.setImage(pressedButtonImage, for: [.highlighted])
 				self.isLoadingObject = false
-                
-                // create tetris shapes at interval
-                Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { (timer) in
-                    let numTiles = 6
-                    let boardLength = CGFloat(2.0)
-                    let boxLength = boardLength / CGFloat(numTiles)
-                    
-                    let box = SCNBox(width: boxLength, height: boxLength, length: boxLength, chamferRadius: 0.1 * boxLength)
-                    box.firstMaterial?.diffuse.contents = UIColor.blue
-                    box.firstMaterial?.lightingModel = .physicallyBased
-                    
-                    let node = SCNNode(geometry: box)
-                    
-                    // create random [0, numTiles)
-                    func createRandomTileIndex() -> Int {
-                        return Int(floor(CGFloat(createRandom(lowerBound: 0, upperBound: 1)) * CGFloat(numTiles)))
-                    }
-                    // create random [-boardLength / 2, boardLength / 2)
-                    func createRandomBoardPosition() -> CGFloat {
-                        return ((CGFloat(createRandomTileIndex()) / CGFloat(numTiles)) * boardLength) - (boardLength / 2)
-                    }
-                    
-                    node.position = SCNVector3(x: object.position.x + Float(createRandomBoardPosition()), y: object.position.y, z: object.position.z + Float(createRandomBoardPosition()))
-                    self.sceneView.scene.rootNode.addChildNode(node)
-                }
 			}
 		}
     }
