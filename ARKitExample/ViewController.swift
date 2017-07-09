@@ -538,12 +538,26 @@ class ViewController: UIViewController, ARSCNViewDelegate, UIPopoverPresentation
                 
                 // create tetris shapes at interval
                 Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { (timer) in
-                    let box = SCNBox(width: 0.1, height: 0.1, length: 0.1, chamferRadius: 0)
+                    let numTiles = 6
+                    let boardLength = CGFloat(2.0)
+                    let boxLength = boardLength / CGFloat(numTiles)
+                    
+                    let box = SCNBox(width: boxLength, height: boxLength, length: boxLength, chamferRadius: 0.1 * boxLength)
                     box.firstMaterial?.diffuse.contents = UIColor.blue
                     box.firstMaterial?.lightingModel = .physicallyBased
                     
                     let node = SCNNode(geometry: box)
-                    node.position = SCNVector3(x: object.position.x + createRandom(lowerBound: -1, upperBound: 1), y: object.position.y, z: object.position.z + createRandom(lowerBound: -1, upperBound: 1))
+                    
+                    // create random [0, numTiles)
+                    func createRandomTileIndex() -> Int {
+                        return Int(floor(CGFloat(createRandom(lowerBound: 0, upperBound: 1)) * CGFloat(numTiles)))
+                    }
+                    // create random [-boardLength / 2, boardLength / 2)
+                    func createRandomBoardPosition() -> CGFloat {
+                        return ((CGFloat(createRandomTileIndex()) / CGFloat(numTiles)) * boardLength) - (boardLength / 2)
+                    }
+                    
+                    node.position = SCNVector3(x: object.position.x + Float(createRandomBoardPosition()), y: object.position.y, z: object.position.z + Float(createRandomBoardPosition()))
                     self.sceneView.scene.rootNode.addChildNode(node)
                 }
 			}
